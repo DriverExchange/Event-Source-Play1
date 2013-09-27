@@ -31,7 +31,7 @@ public class Events extends Controller {
 		if (!Play.mode.isDev()) {
 			response.cacheFor("1h");
 		}
-		response.contentType = "application/javascript";
+		response.contentType = "text/javascript";
 		renderText(CoffeePlugin.compileCoffee(coffeeFile));
 	}
 
@@ -82,7 +82,7 @@ public class Events extends Controller {
 	}
 
 	public static void subscribeJsonp(String appId, String channelName, String filters, String signature, String callback) throws InterruptedException {
-		response.contentType = "application/javascript";
+		response.contentType = "text/javascript";
 
 		Either<EventObject, Timeout> eventObjectOrTimeout = null;
 
@@ -101,7 +101,6 @@ public class Events extends Controller {
 
 			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 60 * 1000)));
 			if (eventObjectOrTimeout._2.isDefined()) {
-				response.status = 200; // Request Timeout
 				renderText(callback + "(\"timeout\");\r\n");
 			}
 
