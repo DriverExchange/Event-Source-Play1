@@ -1,0 +1,3 @@
+[submodule "modules/coffee"]
+	path = modules/coffee
+	url = git@github.com:sylvainmathieu/play-coffee.git

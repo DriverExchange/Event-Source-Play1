@@ -1,0 +1,18 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                                       Application.index
+POST    /{appId}/events/{channelName}           controllers.Events.publish
+GET     /{appId}/events/{channelName}/comet     controllers.Events.subscribeJsonp
+GET     /dxes.js                                controllers.Events.dxesjs
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/                                staticDir:public
+
+# Catch all
+*       /{controller}/{action}                  {controller}.{action}
