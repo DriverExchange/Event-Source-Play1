@@ -1,8 +1,5 @@
 package controllers;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import models.EventManager;
 import models.EventObject;
 import org.jcoffeescript.JCoffeeScriptCompileException;
@@ -16,10 +13,6 @@ import play.modules.coffee.CoffeePlugin;
 import play.mvc.Controller;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class Events extends Controller {
 
@@ -33,22 +26,6 @@ public class Events extends Controller {
 		}
 		response.contentType = "text/javascript";
 		renderText(CoffeePlugin.compileCoffee(coffeeFile));
-	}
-
-	protected static Map<String, List<String>> ingestFilters(String strFilters) {
-		Map<String, List<String>> filters = new HashMap<String, List<String>>();
-		if (strFilters == null) {
-			return filters;
-		}
-		JsonObject obj = new JsonParser().parse(strFilters).getAsJsonObject();
-		for (Map.Entry<String, JsonElement> elem : obj.entrySet()) {
-			List<String> filterList = new ArrayList<String>();
-			for (JsonElement filterElem : elem.getValue().getAsJsonArray()) {
-				filterList.add(filterElem.getAsString());
-			}
-			filters.put(elem.getKey(), filterList);
-		}
-		return filters;
 	}
 
 	protected static boolean checkSignature(String appId, String strFilters, String signature) {
@@ -77,7 +54,7 @@ public class Events extends Controller {
 		if (message == null) {
 			badRequest();
 		}
-		EventObject event = new EventObject(appId, channelName, ingestFilters(filters), message);
+		EventObject event = new EventObject(appId, channelName, filters, message);
 		EventManager.instance.event.publish(event);
 	}
 
@@ -92,18 +69,15 @@ public class Events extends Controller {
 			renderText("The filters do not match the signature");
 		}
 
-		Map<String, List<String>> listenerFilters = ingestFilters(filters);
-
 		while (eventObjectOrTimeout == null
 			|| !eventObjectOrTimeout._1.isDefined()
-			|| !eventObjectOrTimeout._1.get().checkChannel(appId, channelName)
-			|| !eventObjectOrTimeout._1.get().matches(listenerFilters)) {
+			|| !eventObjectOrTimeout._1.get().check(appId, channelName, filters)) {
 
 			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 60 * 1000)));
+
 			if (eventObjectOrTimeout._2.isDefined()) {
 				renderText(callback + "(\"timeout\");\r\n");
 			}
-
 		}
 
 		renderText(callback + "(\"success\"," + eventObjectOrTimeout._1.get().message + ");\r\n");
