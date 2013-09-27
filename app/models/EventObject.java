@@ -25,32 +25,33 @@ public class EventObject {
 	}
 
 	public boolean matches(Map<String, List<String>> listenerFilters) {
-		if (filters != null && !filters.isEmpty()) {
-			if (listenerFilters != null && !filters.isEmpty()) {
-				List<Boolean> res = new ArrayList<Boolean>();
-				for (Map.Entry<String, List<String>> filter : filters.entrySet()) {
-					List<String> listenerFilterList = listenerFilters.get(filter.getKey());
-					List<String> messageFilterList = filter.getValue();
-					if (messageFilterList != null && !messageFilterList.isEmpty()) {
-						if (listenerFilterList == null || listenerFilterList.isEmpty()) {
-							return false;
-						}
-						else {
-							Boolean ok = false;
-							for (String messageFilterElement : messageFilterList) {
-								if (listenerFilterList.contains(messageFilterElement)) {
-									ok = true;
-								}
-							}
-							res.add(ok);
-						}
+		if (filters == null || filters.isEmpty()) {
+			return true;
+		}
+
+		if (listenerFilters == null || listenerFilters.isEmpty()) {
+			return false;
+		}
+
+		List<Boolean> res = new ArrayList<Boolean>();
+		for (Map.Entry<String, List<String>> filter : filters.entrySet()) {
+			List<String> listenerFilterList = listenerFilters.get(filter.getKey());
+			List<String> messageFilterList = filter.getValue();
+			if (messageFilterList != null && !messageFilterList.isEmpty()) {
+				if (listenerFilterList == null || listenerFilterList.isEmpty()) {
+					return false;
+				}
+				boolean ok = false;
+				for (String messageFilterElement : messageFilterList) {
+					if (listenerFilterList.contains(messageFilterElement)) {
+						ok = true;
 					}
 				}
-				return !res.isEmpty() && !res.contains(false);
+				res.add(ok);
 			}
-			else return false;
 		}
-		else return true;
+
+		return !res.isEmpty() && !res.contains(false);
 	}
 
 }
