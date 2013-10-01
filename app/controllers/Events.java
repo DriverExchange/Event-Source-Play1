@@ -55,6 +55,9 @@ public class Events extends Controller {
 			badRequest();
 		}
 		EventObject event = new EventObject(appId, channelName, filters, message);
+
+		Logger.debug("Publishing: %s", event);
+
 		EventManager.instance.event.publish(event);
 	}
 
@@ -73,12 +76,18 @@ public class Events extends Controller {
 			|| !eventObjectOrTimeout._1.isDefined()
 			|| !eventObjectOrTimeout._1.get().check(appId, channelName, filters)) {
 
+			if (eventObjectOrTimeout != null && eventObjectOrTimeout._1.isDefined()) {
+				Logger.debug("Won't deliver... \nListener: (%s/%s) %s\nMessage: %s\n", appId, channelName, filters, eventObjectOrTimeout._1.get().toString(false));
+			}
+
 			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 60 * 1000)));
 
 			if (eventObjectOrTimeout._2.isDefined()) {
 				renderText(callback + "(\"timeout\");\r\n");
 			}
 		}
+
+		Logger.debug("Delivering... \nListener: (%s/%s) %s\nMessage: %s\n", appId, channelName, filters, eventObjectOrTimeout._1.get().toString(false));
 
 		renderText(callback + "(\"success\"," + eventObjectOrTimeout._1.get().message + ");\r\n");
 	}

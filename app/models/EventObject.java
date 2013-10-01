@@ -81,4 +81,13 @@ public class EventObject {
 		return checkChannel(appId, channelName) && checkFilters(ingestFilters(filters));
 	}
 
+	@Override
+	public String toString() {
+		return toString(true);
+	}
+
+	public String toString(boolean withMessage) {
+		return "EventObject(" + appId + "/" + channelName + "," + filters + (withMessage ? "," + message : "") + ")";
+	}
+
 }
