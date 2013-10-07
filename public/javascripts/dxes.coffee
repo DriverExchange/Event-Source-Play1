@@ -1,22 +1,18 @@
 
-loadJSONP = do ->
-	unique = 0
-
-	(options) ->
-		name = "_jsonp_" + unique++;
-		url = options.url + (if options.url.indexOf("?") >= 0 then "&" else "?") + "callback=#{name}"
-
-		script = document.createElement("script")
-		script.type = "text/javascript"
-		script.src = url
-		script.async = true
-
-		window[name] = ->
-			options.callback.apply(null, arguments)
-			document.getElementsByTagName("head")[0].removeChild(script)
-			script = null
-
-		document.getElementsByTagName("head")[0].appendChild(script)
+pollAjax = (options) ->
+	if window.XDomainRequest
+		xhr = new XDomainRequest()
+	else
+		xhr = new XMLHttpRequest()
+	xhr.onload = ->
+		if @responseText and typeof(@responseText) == "string" and @responseText[0] in ["{", "["]
+			responseJson = eval("(#{@responseText})")
+			options.callback(responseJson)
+		pollAjax(options)
+	xhr.open("get", options.url, true)
+	if !window.XDomainRequest
+		xhr.setRequestHeader("Accept", "application/json; charset=utf-8");
+	xhr.send()
 
 getParams = (options) ->
 	params = "?ts=#{new Date().getTime()}"
@@ -33,26 +29,16 @@ window.dxes = (baseUrl, appId) ->
 			eval("data = #{event.data};")
 			options.received(data)
 
-	subscribeJsonp = (options) ->
-		timeoutId = null
-		poll = ->
-			loadJSONP
-				url: baseUrl + "/#{appId}/events/#{options.channel}/comet" + getParams(options)
-				callback: (status, data) ->
-					clearTimeout(timeoutId)
-					if status == "success"
-						options.received(data)
-						poll()
-
-			timeoutId = setTimeout(poll, 60 * 1000)
-
-		# use setTimeout here otherwise the browser loading icon won't stop spinning
-		setTimeout(poll, 1)
+	subscribeAjax = (options) ->
+		pollAjax
+			url: baseUrl + "/#{appId}/events/#{options.channel}/ajax" + getParams(options)
+			callback: (data) ->
+				options.received(data)
 
 	subscribeSSE: subscribeSSE
-	subscribeJsonp: subscribeJsonp
+	subscribeAjax: subscribeAjax
 	subscribe: (options) ->
-		subscribeJsonp(options)
+		subscribeAjax(options)
 		# if !!window["EventSource"]
 		# 	try
 		# 		subscribeSSE(options)
