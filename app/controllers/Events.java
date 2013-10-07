@@ -61,6 +61,37 @@ public class Events extends Controller {
 		EventManager.instance.event.publish(event);
 	}
 
+	public static void subscribeJsonp(String appId, String channelName, String filters, String signature, String callback) throws InterruptedException {
+		response.contentType = "text/javascript";
+
+		Either<EventObject, Timeout> eventObjectOrTimeout = null;
+
+		if (!checkSignature(appId, filters, signature)) {
+			response.status = 400;
+			Logger.warn("The filters do not match the signature (appId: %s, channelName: %s)", appId, channelName);
+			renderText("The filters do not match the signature");
+		}
+
+		while (eventObjectOrTimeout == null
+			|| !eventObjectOrTimeout._1.isDefined()
+			|| !eventObjectOrTimeout._1.get().check(appId, channelName, filters)) {
+
+			if (eventObjectOrTimeout != null && eventObjectOrTimeout._1.isDefined()) {
+				Logger.debug("Won't deliver... \nListener: (%s/%s) %s\nMessage: %s\n", appId, channelName, filters, eventObjectOrTimeout._1.get().toString(false));
+			}
+
+			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 60 * 1000)));
+
+			if (eventObjectOrTimeout._2.isDefined()) {
+				renderText(callback + "(\"timeout\");\r\n");
+			}
+		}
+
+		Logger.debug("Delivering... \nListener: (%s/%s) %s\nMessage: %s\n", appId, channelName, filters, eventObjectOrTimeout._1.get().toString(false));
+
+		renderText(callback + "(\"success\"," + eventObjectOrTimeout._1.get().message + ");\r\n");
+	}
+
 	public static void subscribeAjax(String appId, String channelName, String filters, String signature) {
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		response.contentType = "application/json; charset=utf-8";
