@@ -112,7 +112,7 @@ public class Events extends Controller {
 				Logger.debug("Won't deliver... \nListener: (%s/%s) %s\nMessage: %s\n", appId, channelName, filters, eventObjectOrTimeout._1.get().toString(false));
 			}
 
-			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 10 * 1000)));
+			eventObjectOrTimeout = await(Promise.waitEither(EventManager.instance.event.nextEvent(), new Timeout(Codec.UUID(), 60 * 1000)));
 
 			if (eventObjectOrTimeout._2.isDefined()) {
 				renderText("");
