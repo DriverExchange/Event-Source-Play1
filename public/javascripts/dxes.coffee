@@ -38,7 +38,7 @@ window.dxes = (baseUrl, appId) ->
 	subscribeSSE: subscribeSSE
 	subscribeAjax: subscribeAjax
 	subscribe: (options) ->
-		subscribeAjax(options)
+		setTimeout (-> subscribeAjax(options)), 2000
 		# if !!window["EventSource"]
 		# 	try
 		# 		subscribeSSE(options)
